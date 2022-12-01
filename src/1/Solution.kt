@@ -9,7 +9,7 @@ class Solution : SolutionInterface(testSolutionOne = 24000, testSolutionTwo = 45
     }
 
     override fun exerciseTwo(input: List<String>): Int {
-        return getOrderedTotals(input).windowed(3).map { it.sum() }.first()
+        return getOrderedTotals(input).take(3).sum()
     }
 
     private fun getOrderedTotals(input: List<String>): List<Int> {
