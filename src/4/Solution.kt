@@ -35,9 +35,8 @@ class Solution : SolutionInterface(testSolutionOne = 2, testSolutionTwo = 4) {
                 first.first in second.first..second.second &&
                 first.second in second.first..second.second
 
-    private fun overlaps(first: Pair<Int, Int>, second: Pair<Int, Int>): Boolean {
-        return first.second >= second.first && second.second >= first.first
-    }
+    private fun overlaps(first: Pair<Int, Int>, second: Pair<Int, Int>): Boolean =
+        first.second >= second.first && second.second >= first.first
 
 }
 
