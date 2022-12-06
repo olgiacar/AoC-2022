@@ -2,37 +2,27 @@ package `5`
 
 import SolutionInterface
 
-class Solution : SolutionInterface(testSolutionOne = 7, testSolutionTwo = 5) {
+class Solution : SolutionInterface(testSolutionOne = 0, testSolutionTwo = 0) {
     private var stacks: MutableList<MutableList<Char>> = mutableListOf()
 
-    override fun exerciseOne(input: List<String>): Int {
+    override fun exerciseOne(input: List<String>) = calcSolution(input, ::makeMove)
+
+    override fun exerciseTwo(input: List<String>) = calcSolution(input, ::makeMoveTwo)
+
+    private fun calcSolution(
+        input: List<String>,
+        function: (move: Triple<Int, Int, Int>, stacks: MutableList<MutableList<Char>>) -> Unit
+    ): Int {
         initializeStacks(input)
-        getMoves(input)
-            .map { it.split(" ") }
-            .map { Triple(it[1].toInt(), it[3].toInt(), it[5].toInt()) }
-            .forEach { makeMove(it, stacks) }
+        getMoves(input).forEach { function(it, stacks) }.also { printSolution() }
 
-        printSolution()
-
-        return 7
-    }
-
-    override fun exerciseTwo(input: List<String>): Int {
-        initializeStacks(input)
-        getMoves(input)
-            .map { it.split(" ") }
-            .map { Triple(it[1].toInt(), it[3].toInt(), it[5].toInt()) }
-            .forEach { makeMoveTwo(it, stacks) }
-
-        printSolution()
-
-        return 5
+        return 0
     }
 
     private fun printSolution() {
-        val solution = stacks.map { it.last() }
+        stacks.map { it.last() }
             .fold("") { acc, c -> "$acc$c" }
-        println(solution)
+            .also { println(it) }
     }
 
     private fun makeMove(move: Triple<Int, Int, Int>, stacks: MutableList<MutableList<Char>>) {
@@ -42,34 +32,30 @@ class Solution : SolutionInterface(testSolutionOne = 7, testSolutionTwo = 5) {
     }
 
     private fun makeMoveTwo(move: Triple<Int, Int, Int>, stacks: MutableList<MutableList<Char>>) {
-        val amount = stacks[move.second - 1].size - move.first
-        stacks[move.third - 1].addAll(stacks[move.second - 1].drop(amount))
-        repeat(move.first) { stacks[move.second - 1].removeLast() }
+        (stacks[move.second - 1].size - move.first)
+            .also { stacks[move.third - 1].addAll(stacks[move.second - 1].drop(it)) }
+            .also { repeat(move.first) { stacks[move.second - 1].removeLast() } }
     }
 
     private fun initializeStacks(input: List<String>) {
-        stacks = mutableListOf()
-        repeat(input.first().length / 4 + 1) { stacks.add(mutableListOf()) }
+        mutableListOf<MutableList<Char>>()
+            .also { list ->
+                repeat(input.first().length / 4 + 1) { list.add(mutableListOf()) }
+            }.also { stacks = it }
 
-        val stackData = input.takeWhile { it.trim().startsWith("[") }
+        input.takeWhile { it.trim().startsWith("[") }
             .reversed()
-
-        stackData.forEach {
-            stacks.forEachIndexed { i, stack ->
-                val crate = it[i * 4 + 1]
-                if (crate != ' ') stack.add(crate)
+            .forEach {
+                it.chunked(4).forEachIndexed { i, chunk ->
+                    if (chunk[1] != ' ') stacks[i].add(chunk[1])
+                }
             }
-        }
     }
 
-    private fun getMoves(input: List<String>): List<String> {
-        for (i in input.indices) {
-            if (input[i] == "") {
-                return input.drop(i + 1)
-            }
-        }
-        return input
-    }
+    private fun getMoves(input: List<String>): List<Triple<Int, Int, Int>> =
+        input.dropWhile { !it.startsWith("move") }
+            .map { it.split(" ") }
+            .map { Triple(it[1].toInt(), it[3].toInt(), it[5].toInt()) }
 
 }
 

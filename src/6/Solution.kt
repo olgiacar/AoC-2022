@@ -2,22 +2,18 @@ package `6`
 
 import SolutionInterface
 
-class Solution : SolutionInterface(testSolutionOne = 7, testSolutionTwo = 5) {
+class Solution : SolutionInterface(testSolutionOne = 7, testSolutionTwo = 19) {
 
-    override fun exerciseOne(input: List<String>): Int {
-        return input.map { it.toInt() }
-            .zipWithNext { a, b -> if (b > a) 1 else 0 }
-            .sum()
-    }
+    override fun exerciseOne(input: List<String>) = getFirstMarker(input, 4)
 
-    override fun exerciseTwo(input: List<String>): Int {
-        return input.asSequence()
-            .map { it.toInt() }
-            .windowed(3)
-            .map { it.sum() }
-            .zipWithNext { a, b -> if (b > a) 1 else 0 }
-            .sum()
-    }
+    override fun exerciseTwo(input: List<String>) = getFirstMarker(input, 14)
+
+    private fun getFirstMarker(input: List<String>, window: Int) =
+        getFirstMarkerIndex(input.first().windowed(window)) + window
+
+    private fun getFirstMarkerIndex(chunks: List<String>): Int = chunks.indexOfFirst { isMarker(it) }
+
+    private fun isMarker(s: String) = s.toList().toSet().size == s.length
 
 }
 
