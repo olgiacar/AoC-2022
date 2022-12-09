@@ -2,6 +2,7 @@ package `8`
 
 import SolutionInterface
 import kotlin.math.max
+import kotlin.math.min
 
 class Solution : SolutionInterface(testSolutionOne = 21, testSolutionTwo = 8) {
 
@@ -42,19 +43,15 @@ class Solution : SolutionInterface(testSolutionOne = 21, testSolutionTwo = 8) {
 
     private fun getScenicScore(forest: List<List<Int>>, i: Int, j: Int): Int {
         val value = forest[i][j]
-        val left = getDistance(forest[i].take(j).reversed(), value)
-        val right = getDistance(forest[i].takeLast(forest.size - j - 1), value)
+        val left = getViewingDistance(forest[i].take(j).reversed(), value)
+        val right = getViewingDistance(forest[i].takeLast(forest.size - j - 1), value)
         val column = getColumn(forest, j)
-        val top = getDistance(column.take(i).reversed(), value)
-        val bottom = getDistance(column.takeLast(forest.size - i - 1), value)
+        val top = getViewingDistance(column.take(i).reversed(), value)
+        val bottom = getViewingDistance(column.takeLast(forest.size - i - 1), value)
         return left * right * bottom * top
     }
 
-    private fun getDistance(trees: List<Int>, x: Int): Int {
-        val nonBlockingCount = trees.takeWhile { it < x }.size
-        if (nonBlockingCount == trees.size) return nonBlockingCount
-        return nonBlockingCount + 1
-    }
+    private fun getViewingDistance(trees: List<Int>, x: Int) = min(trees.takeWhile { it < x }.size + 1, trees.size)
 
     private fun getColumn(forest: List<List<Int>>, column: Int) = forest.map { it[column] }
 
