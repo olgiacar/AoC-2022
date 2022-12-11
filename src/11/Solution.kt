@@ -2,21 +2,84 @@ package `11`
 
 import SolutionInterface
 
-class Solution : SolutionInterface(testSolutionOne = 7, testSolutionTwo = 5) {
+
+class Monkey(
+    startingItems: String,
+    operation: String,
+    val test: Int,
+    private val trueCase: Int,
+    private val falseCase: Int
+) {
+    var inspected = 0
+    val items: MutableList<Int> = startingItems.split(", ").map { it.toInt() }.toMutableList()
+    val op: (Int, Int) -> Int
+
+    init {
+        val tokens = operation.split(" ").take(3)
+        op = { it: Int, gcd: Int ->
+            val first = if (tokens.first() == "old") it else tokens.first().toInt()
+            val second = if (tokens.last() == "old") it else tokens.last().toInt()
+            if (tokens[1] == "+") {
+                (first + second) % gcd
+            } else {
+                first.toBigInteger().multiply(second.toBigInteger()).mod(gcd.toBigInteger()).toInt()
+            }
+        }
+    }
+
+    fun inspect(it: Int): Int {
+        inspected++
+        return if (isDivisible(it)) trueCase else falseCase
+    }
+
+    private fun isDivisible(it: Int) = it % test == 0
+
+}
+
+class Solution : SolutionInterface(testSolutionOne = 10605, testSolutionTwo = 5) {
 
     override fun exerciseOne(input: List<String>): Int {
-        return input.map { it.toInt() }
-            .zipWithNext { a, b -> if (b > a) 1 else 0 }
-            .sum()
+        val monkeys = getMonkeys(input)
+        doRounds(monkeys, 20, 3)
+
+        return monkeys.map { it.inspected }.sortedDescending().take(2).fold(1) { it, acc -> it * acc }
     }
 
     override fun exerciseTwo(input: List<String>): Int {
-        return input.asSequence()
-            .map { it.toInt() }
-            .windowed(3)
-            .map { it.sum() }
-            .zipWithNext { a, b -> if (b > a) 1 else 0 }
-            .sum()
+        val monkeys = getMonkeys(input)
+        doRounds(monkeys, 10_000, 1)
+
+        val x = monkeys.map { it.inspected }.sortedDescending().take(2)
+        println("Solution: ${x.first().toBigInteger().times(x.last().toBigInteger())}")
+
+        return 5
+    }
+
+    private fun getMonkeys(input: List<String>): List<Monkey> {
+        return input.chunked(7).map {
+            Monkey(
+                it[1].split(": ").last(),
+                it[2].split("= ").last(),
+                it[3].split("by ").last().toInt(),
+                it[4].last().digitToInt(),
+                it[5].last().digitToInt()
+            )
+        }
+    }
+
+    private fun doRounds(monkeys: List<Monkey>, amount: Int, worryDivider: Int) {
+        val gcd = monkeys.map { it.test }.fold(1) { it, acc -> it * acc }
+
+        repeat(amount) {
+            for (monkey in monkeys) {
+                while (monkey.items.isNotEmpty()) {
+                    val item = monkey.items.removeFirst()
+                    val newItem = monkey.op(item, gcd) / worryDivider
+                    val toMonkey = monkey.inspect(newItem)
+                    monkeys[toMonkey].items.add(newItem)
+                }
+            }
+        }
     }
 
 }
