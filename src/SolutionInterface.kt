@@ -40,4 +40,5 @@ abstract class SolutionInterface(
         println("Exercise one: $one")
         println("Exercise two: $two")
     }
+
 }
