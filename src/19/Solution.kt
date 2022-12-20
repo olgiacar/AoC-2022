@@ -1,33 +1,89 @@
 package `19`
 
 import SolutionInterface
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
-abstract class Robot(open val ore: Int) {
-    open fun canBeBuilt(materials: Materials) = ore <= materials.ore
+abstract class Robot {
+    abstract val price: Materials
+    abstract val amount: Robots
+    open fun canBeBuilt(materials: Materials) =
+        price.ore <= materials.ore &&
+                price.clay <= materials.clay &&
+                price.obsidian <= materials.obsidian &&
+                price.geode <= materials.geode
 }
 
-class OreRobot(override val ore: Int) : Robot(ore)
-class ClayRobot(override val ore: Int) : Robot(ore)
-class ObsidianRobot(override val ore: Int, val clay: Int) : Robot(ore) {
-    override fun canBeBuilt(materials: Materials) = super.canBeBuilt(materials) && clay <= materials.clay
+class NoRobot : Robot() {
+    override val price = Materials(0, 0, 0, 0)
+    override val amount = Materials(0, 0, 0, 0)
 }
 
-class GeodeRobot(override val ore: Int, val obsidian: Int) : Robot(ore) {
-    override fun canBeBuilt(materials: Materials) = super.canBeBuilt(materials) && obsidian <= materials.obsidian
+class OreRobot(ore: Int) : Robot() {
+    override val price = Materials(ore, 0, 0, 0)
+    override val amount = Materials(1, 0, 0, 0)
 }
 
-data class Materials(val ore: Int, val clay: Int, val obsidian: Int, val geode: Int)
-data class Robots(val ore: Int, val clay: Int, val obsidian: Int, val geode: Int)
+class ClayRobot(ore: Int) : Robot() {
+    override val price = Materials(ore, 0, 0, 0)
+    override val amount = Materials(0, 1, 0, 0)
+}
+
+class ObsidianRobot(ore: Int, clay: Int) : Robot() {
+    override val price = Materials(ore, clay, 0, 0)
+    override val amount = Materials(0, 0, 1, 0)
+}
+
+class GeodeRobot(ore: Int, obsidian: Int) : Robot() {
+    override val price = Materials(ore, 0, obsidian, 0)
+    override val amount = Materials(0, 0, 0, 1)
+}
+
+class Resource(val ore: Int, val clay: Int, val obsidian: Int, val geode: Int) : Comparable<Resource> {
+    override operator fun compareTo(other: Resource): Int {
+        val value = getC(other)
+        return value
+    }
+
+    private fun getC(other: Resource): Int {
+        if (other.geode.compareTo(geode) != 0) return other.geode.compareTo(geode)
+        if (other.obsidian.compareTo(obsidian) != 0) return other.obsidian.compareTo(obsidian)
+        if (other.clay.compareTo(clay) != 0) return other.clay.compareTo(clay)
+        return other.ore.compareTo(ore)
+    }
+
+    fun add(other: Resource) = Resource(
+        ore + other.ore,
+        clay + other.clay,
+        obsidian + other.obsidian,
+        geode + other.geode,
+    )
+
+    fun sub(other: Resource) = Resource(
+        ore - other.ore,
+        clay - other.clay,
+        obsidian - other.obsidian,
+        geode - other.geode,
+    )
+}
+
+typealias Materials = Resource
+typealias Robots = Resource
+
+
+data class Status(val materials: Materials, val robots: Robots) : Comparable<Status> {
+    override operator fun compareTo(other: Status): Int {
+        return materials.add(robots).compareTo(other.materials.add(other.robots))
+    }
+}
 
 
 class Blueprint(line: String) {
     val id: Int
-    lateinit var oreRobot: OreRobot
-    lateinit var clayRobot: ClayRobot
-    lateinit var obsidianRobot: ObsidianRobot
-    lateinit var geodeRobot: GeodeRobot
+    private lateinit var oreRobot: OreRobot
+    private lateinit var clayRobot: ClayRobot
+    private lateinit var obsidianRobot: ObsidianRobot
+    private lateinit var geodeRobot: GeodeRobot
+    private val noRobot = NoRobot()
+    val robots = mutableListOf<Robot>()
 
     init {
         id = line.split(": ").first().split(" ").last().toInt()
@@ -48,134 +104,50 @@ class Blueprint(line: String) {
                 }
             }
         }
+        robots.addAll(listOf(oreRobot, clayRobot, obsidianRobot, geodeRobot, noRobot))
     }
 }
 
-class Solution : SolutionInterface(testSolutionOne = 33, testSolutionTwo = 5) {
-    private val robotTypes = listOf("ORE", "CLAY", "OBSIDIAN", "GEODE")
-    private val memo = mutableMapOf<Triple<Materials, Robots, Int>, Int>()
+class Solution : SolutionInterface(testSolutionOne = 33, testSolutionTwo = 3472) {
+    private val initialState = Status(Materials(0, 0, 0, 0), Robots(1, 0, 0, 0))
 
     override fun exerciseOne(input: List<String>): Int {
         val blueprints = input.map { Blueprint(it) }
 
-        val obs = blueprints.map {
-            runBlocking {
-                it.id to launch {
-                    getGeode(
-                        it,
-                        24,
-                        Materials(0, 0, 0, 0),
-                        Robots(1, 0, 0, 0)
-                    )
-                }
-            }
-        }
-
-        return obs.sumOf { it.first * it.second }
+        return blueprints.map { it.id to getMaxGeode(it, 24, initialState) }.sumOf { it.first * it.second }
     }
 
     override fun exerciseTwo(input: List<String>): Int {
-        return 5
         val blueprints = input.map { Blueprint(it) }.take(3)
 
-        val obs = blueprints.map {
-            runBlocking {
-                getGeode(
-                    it,
-                    32,
-                    Materials(0, 0, 0, 0),
-                    Robots(1, 0, 0, 0)
-                )
-            }
-
-        }
+        val obs = blueprints.map { getMaxGeode(it, 32, initialState) }
 
         return obs.fold(1) { it, acc -> it * acc }
     }
 
-    private suspend fun getGeode(blueprint: Blueprint, step: Int, materials: Materials, robots: Robots): Int {
-        if (step == 0) return materials.geode
-        var max = materials.geode
-
-        if (blueprint.geodeRobot.canBeBuilt(materials)) {
-            val newMaterials = getUpdatedMaterials(materials, robots)
-            val m = Materials(
-                newMaterials.ore - blueprint.geodeRobot.ore,
-                newMaterials.clay,
-                newMaterials.obsidian - blueprint.geodeRobot.obsidian,
-                newMaterials.geode
-            )
-            val r = Robots(robots.ore, robots.clay, robots.obsidian, robots.geode + 1)
-            getGeode(blueprint, step - 1, m, r).also { if (it > max) max = it }
-        } else {
-            for (type in robotTypes) {
-                when (type) {
-                    "ORE" -> {
-                        if (blueprint.oreRobot.canBeBuilt(materials)) {
-                            val newMaterials = getUpdatedMaterials(materials, robots)
-                            val m = Materials(
-                                newMaterials.ore - blueprint.oreRobot.ore,
-                                newMaterials.clay,
-                                newMaterials.obsidian,
-                                newMaterials.geode
-                            )
-                            val r = Robots(robots.ore + 1, robots.clay, robots.obsidian, robots.geode)
-                            getGeode(blueprint, step - 1, m, r).also { if (it > max) max = it }
-                        }
-                    }
-
-                    "CLAY" -> {
-                        if (blueprint.clayRobot.canBeBuilt(materials)) {
-                            val newMaterials = getUpdatedMaterials(materials, robots)
-                            val m = Materials(
-                                newMaterials.ore - blueprint.clayRobot.ore,
-                                newMaterials.clay,
-                                newMaterials.obsidian,
-                                newMaterials.geode
-                            )
-                            val r = Robots(robots.ore, robots.clay + 1, robots.obsidian, robots.geode)
-                            getGeode(blueprint, step - 1, m, r).also { if (it > max) max = it }
-                        }
-                    }
-
-                    "OBSIDIAN" -> {
-                        if (blueprint.obsidianRobot.canBeBuilt(materials)) {
-                            val newMaterials = getUpdatedMaterials(materials, robots)
-                            val m = Materials(
-                                newMaterials.ore - blueprint.obsidianRobot.ore,
-                                newMaterials.clay - blueprint.obsidianRobot.clay,
-                                newMaterials.obsidian,
-                                newMaterials.geode
-                            )
-                            val r = Robots(robots.ore, robots.clay, robots.obsidian + 1, robots.geode)
-                            getGeode(blueprint, step - 1, m, r).also { if (it > max) max = it }
-                        }
-                    }
-
-                    else -> {
-                        if (
-                            !blueprint.oreRobot.canBeBuilt(materials) ||
-                            !blueprint.clayRobot.canBeBuilt(materials) ||
-                            !blueprint.obsidianRobot.canBeBuilt(materials)
-                        )
-                            getGeode(
-                                blueprint,
-                                step - 1,
-                                getUpdatedMaterials(materials, robots),
-                                robots
-                            ).also { if (it > max) max = it }
-                    }
+    private fun getMaxGeode(blueprint: Blueprint, step: Int, initialState: Status): Int {
+        val queue = mutableListOf(initialState)
+        repeat(step) {
+            val nextQueue = mutableSetOf<Status>()
+            for (state in queue) {
+                for (robot in blueprint.robots) {
+                    addToQueue(robot, state, nextQueue)
                 }
             }
+            queue.clear()
+            queue.addAll(nextQueue.toList().sorted().take(50_000))
         }
-
-        return max
+        return queue.maxOf { it.materials.geode }
     }
 
-    private fun getUpdatedMaterials(materials: Materials, robots: Robots): Materials {
-        val (ore, clay, obsidian, geode) = materials
-        val (oreRobots, clayRobots, obsidianRobots, geodeRobots) = robots
-        return Materials(ore + oreRobots, clay + clayRobots, obsidian + obsidianRobots, geode + geodeRobots)
+    private fun addToQueue(robot: Robot, state: Status, queue: MutableSet<Status>) {
+        if (robot.canBeBuilt(state.materials)) {
+            val newMaterials: Materials = state.materials
+                .add(state.robots)
+                .sub(robot.price)
+            val newRobots = state.robots.add(robot.amount)
+            queue.add(Status(newMaterials, newRobots))
+        }
     }
 
 }
