@@ -2,7 +2,7 @@ package `5`
 
 import SolutionInterface
 
-class Solution : SolutionInterface(testSolutionOne = 0, testSolutionTwo = 0) {
+class Solution : SolutionInterface(testSolutionOne = "CMZ", testSolutionTwo = "MCD") {
     private var stacks: MutableList<MutableList<Char>> = mutableListOf()
 
     override fun exerciseOne(input: List<String>) = calcSolution(input, ::makeMove)
@@ -12,17 +12,10 @@ class Solution : SolutionInterface(testSolutionOne = 0, testSolutionTwo = 0) {
     private fun calcSolution(
         input: List<String>,
         function: (move: Triple<Int, Int, Int>, stacks: MutableList<MutableList<Char>>) -> Unit
-    ): Int {
+    ): String {
         initializeStacks(input)
-        getMoves(input).forEach { function(it, stacks) }.also { printSolution() }
-
-        return 0
-    }
-
-    private fun printSolution() {
-        stacks.map { it.last() }
-            .fold("") { acc, c -> "$acc$c" }
-            .also { println(it) }
+        getMoves(input).forEach { function(it, stacks) }
+            .also { return stacks.map { it.last() }.fold("") { acc, c -> "$acc$c" } }
     }
 
     private fun makeMove(move: Triple<Int, Int, Int>, stacks: MutableList<MutableList<Char>>) {

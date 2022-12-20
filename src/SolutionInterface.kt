@@ -1,44 +1,36 @@
 import java.io.File
 
 abstract class SolutionInterface(
-    private val testSolutionOne: Int,
-    private val testSolutionTwo: Int
+    private val testSolutionOne: Any,
+    private val testSolutionTwo: Any
 ) {
     private val inputPath = "${javaClass.packageName}/.input"
     private val testPath = "${javaClass.packageName}/.test"
 
-    abstract fun exerciseOne(input: List<String>): Int
-    abstract fun exerciseTwo(input: List<String>): Int
+    abstract fun exerciseOne(input: List<String>): Any
+    abstract fun exerciseTwo(input: List<String>): Any
 
     fun run() {
-        checkTestInput()
-        runSolution()
+        runOne()
+        runTwo()
     }
 
-    private fun runSolution() {
-        val lines = readLines(inputPath)
-        val solutionOne = exerciseOne(lines)
-        val solutionTwo = exerciseTwo(lines)
-        printSolutions(solutionOne, solutionTwo)
+    private fun runOne() {
+        val testOne = exerciseOne(readLines(testPath))
+        println("Expected: $testSolutionOne, got: $testOne")
+        check(testOne.toString() == testSolutionOne.toString())
+        val solutionOne = exerciseOne(readLines(inputPath))
+        println("Exercise one: $solutionOne")
     }
 
-    private fun checkTestInput() {
-        val lines = readLines(testPath)
-        val one = exerciseOne(lines)
-        val two = exerciseTwo(lines)
-        println("Expected: $testSolutionOne, got: $one")
-        check(one == testSolutionOne)
-        println("Expected: $testSolutionTwo, got: $two")
-        check(two == testSolutionTwo)
+    private fun runTwo() {
+        val testTwo = exerciseTwo(readLines(testPath))
+        println("Expected: $testSolutionTwo, got: $testTwo")
+        check(testTwo.toString() == testSolutionTwo.toString())
+        val solutionTwo = exerciseTwo(readLines(inputPath))
+        println("Exercise one: $solutionTwo")
     }
 
-    private fun readLines(fileName: String): List<String> {
-        return File("src", fileName).readLines()
-    }
-
-    private fun printSolutions(one: Int, two: Int) {
-        println("Exercise one: $one")
-        println("Exercise two: $two")
-    }
+    private fun readLines(fileName: String) = File("src", fileName).readLines()
 
 }

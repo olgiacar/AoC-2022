@@ -39,11 +39,6 @@ class GeodeRobot(ore: Int, obsidian: Int) : Robot() {
 
 class Resource(val ore: Int, val clay: Int, val obsidian: Int, val geode: Int) : Comparable<Resource> {
     override operator fun compareTo(other: Resource): Int {
-        val value = getC(other)
-        return value
-    }
-
-    private fun getC(other: Resource): Int {
         if (other.geode.compareTo(geode) != 0) return other.geode.compareTo(geode)
         if (other.obsidian.compareTo(obsidian) != 0) return other.obsidian.compareTo(obsidian)
         if (other.clay.compareTo(clay) != 0) return other.clay.compareTo(clay)

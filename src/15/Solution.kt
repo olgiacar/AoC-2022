@@ -4,7 +4,7 @@ import SolutionInterface
 import java.math.BigInteger
 import kotlin.math.absoluteValue
 
-class Solution : SolutionInterface(testSolutionOne = 26, testSolutionTwo = BigInteger.valueOf(56000011).toInt()) {
+class Solution : SolutionInterface(testSolutionOne = 26, testSolutionTwo = 56000011) {
     private var testOne = true
     private var testTwo = true
 
@@ -23,7 +23,7 @@ class Solution : SolutionInterface(testSolutionOne = 26, testSolutionTwo = BigIn
         return notPossible.size
     }
 
-    override fun exerciseTwo(input: List<String>): Int {
+    override fun exerciseTwo(input: List<String>): BigInteger {
         val maxRange = if (testTwo) 20 else 4_000_000
         testTwo = testTwo.not()
 
@@ -34,14 +34,14 @@ class Solution : SolutionInterface(testSolutionOne = 26, testSolutionTwo = BigIn
             for (i in -distance..distance) {
                 var current = sensor.first + i to sensor.second + (distance + i)
                 if (isNotCovered(current, sensors, maxRange))
-                    return getTuningFrequency(current.first, current.second).also { r -> println(r.toString()) }.toInt()
+                    return getTuningFrequency(current.first, current.second)
                 current = sensor.first + i to sensor.second - (distance + i)
                 if (isNotCovered(current, sensors, maxRange))
-                    return getTuningFrequency(current.first, current.second).also { r -> println(r.toString()) }.toInt()
+                    return getTuningFrequency(current.first, current.second)
             }
         }
 
-        return 5
+        return BigInteger.ZERO
     }
 
     private fun getTuningFrequency(x: Int, y: Int) = BigInteger.valueOf(x.toLong())

@@ -1,6 +1,7 @@
 package `11`
 
 import SolutionInterface
+import java.math.BigInteger
 
 
 class Monkey(
@@ -36,7 +37,7 @@ class Monkey(
 
 }
 
-class Solution : SolutionInterface(testSolutionOne = 10605, testSolutionTwo = 5) {
+class Solution : SolutionInterface(testSolutionOne = 10605, testSolutionTwo = 2713310158) {
 
     override fun exerciseOne(input: List<String>): Int {
         val monkeys = getMonkeys(input)
@@ -45,14 +46,12 @@ class Solution : SolutionInterface(testSolutionOne = 10605, testSolutionTwo = 5)
         return monkeys.map { it.inspected }.sortedDescending().take(2).fold(1) { it, acc -> it * acc }
     }
 
-    override fun exerciseTwo(input: List<String>): Int {
+    override fun exerciseTwo(input: List<String>): BigInteger {
         val monkeys = getMonkeys(input)
         doRounds(monkeys, 10_000, 1)
 
-        val x = monkeys.map { it.inspected }.sortedDescending().take(2)
-        println("Solution: ${x.first().toBigInteger().times(x.last().toBigInteger())}")
-
-        return 5
+        monkeys.map { it.inspected }.sortedDescending().take(2)
+            .also { return it.first().toBigInteger().times(it.last().toBigInteger()) }
     }
 
     private fun getMonkeys(input: List<String>): List<Monkey> {

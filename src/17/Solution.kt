@@ -3,7 +3,7 @@ package `17`
 import SolutionInterface
 import java.math.BigInteger
 
-class Solution : SolutionInterface(testSolutionOne = 3068, testSolutionTwo = 5) {
+class Solution : SolutionInterface(testSolutionOne = 3068, testSolutionTwo = 1514285714288) {
     private val stones = listOf(
         listOf(0 to 0, 1 to 0, 2 to 0, 3 to 0),
         listOf(0 to 1, 1 to 0, 1 to 1, 1 to 2, 2 to 1),
@@ -18,7 +18,7 @@ class Solution : SolutionInterface(testSolutionOne = 3068, testSolutionTwo = 5) 
         return getMaxHeight(cave)
     }
 
-    override fun exerciseTwo(input: List<String>): Int {
+    override fun exerciseTwo(input: List<String>): BigInteger {
         val cave = getCave(input, 5000)
         val (start, end) = getPatternRepeat(cave)
         val patternHeight = BigInteger.valueOf((end - start).toLong())
@@ -33,9 +33,7 @@ class Solution : SolutionInterface(testSolutionOne = 3068, testSolutionTwo = 5) 
 
         val restHeight = getMaxHeight(getCave(input, rest.toInt()))
 
-        println(cycles.times(patternHeight).plus(BigInteger.valueOf(restHeight.toLong())))
-
-        return 5
+        return cycles.times(patternHeight).plus(BigInteger.valueOf(restHeight.toLong()))
     }
 
     private fun stonePassesHeight(input: List<String>, height: Int): Int {
@@ -84,25 +82,6 @@ class Solution : SolutionInterface(testSolutionOne = 3068, testSolutionTwo = 5) 
         }
 
         return cave
-    }
-
-    private fun doStep(start: BigInteger, rest: BigInteger): Pair<BigInteger, BigInteger> {
-        var total = start
-        var loops = BigInteger.valueOf(2020)
-        while (loops.times(BigInteger.TWO) < rest) {
-            loops = loops.times(BigInteger.TWO)
-            total = total.times(BigInteger.TWO).plus(BigInteger.TEN)
-        }
-        return total to loops
-    }
-
-    private fun resetCave(cave: MutableMap<Pair<Int, Int>, Boolean>): MutableMap<Pair<Int, Int>, Boolean> {
-        val height = getMaxHeight(cave)
-        val newCave = mutableMapOf<Pair<Int, Int>, Boolean>()
-        for (i in -2..4) {
-            if (cave.contains(i to height)) newCave[i to 0]
-        }
-        return newCave
     }
 
     private fun dropStone(
