@@ -4,89 +4,64 @@ import SolutionInterface
 import isNumeric
 import java.math.BigInteger
 
-class Operation(command: String) {
-    val operation: (BigInteger, BigInteger) -> BigInteger = getOperation(command)
-    val left: String = command.split(" ").first()
-    val right: String = command.split(" ").last()
+abstract class Tree(val name: String) {
+    abstract fun eval(): BigInteger
 
-    private fun getOperation(command: String): (BigInteger, BigInteger) -> BigInteger {
-        if ("+" in command) return { a: BigInteger, b: BigInteger -> a.plus(b) }
-        if ("-" in command) return { a: BigInteger, b: BigInteger -> a.minus(b) }
-        if ("*" in command) return { a: BigInteger, b: BigInteger -> a.times(b) }
-        return { a: BigInteger, b: BigInteger -> a.divide(b) }
+    abstract fun has(name: String): Boolean
+}
+
+class Node(name: String, val left: Tree, val right: Tree, val operation: String) : Tree(name) {
+
+    override fun eval(): BigInteger = when (operation) {
+        "+" -> left.eval().add(right.eval())
+        "-" -> left.eval().subtract(right.eval())
+        "*" -> left.eval().multiply(right.eval())
+        else -> left.eval().divide(right.eval())
     }
+
+    override fun has(name: String) = this.name == name || left.has(name) || right.has(name)
+
+}
+
+class Leaf(name: String, private val value: BigInteger) : Tree(name) {
+    override fun eval() = value
+
+    override fun has(name: String) = this.name == name
 }
 
 class Solution : SolutionInterface(testSolutionOne = 152, testSolutionTwo = 301) {
-    var first = true
+    private val inverseOperation = mapOf("+" to "-", "-" to "+", "*" to "/", "/" to "*")
 
-    override fun exerciseOne(input: List<String>): BigInteger {
-        val (results, operations) = getMonkeys(input)
-        return find("root", results, operations)
-    }
+    override fun exerciseOne(input: List<String>) = getTree(input).eval()
 
     override fun exerciseTwo(input: List<String>): BigInteger {
-        if (first) {
-            first = false
-            return 301.toBigInteger()
+        getTree(input).also { tree ->
+            if ((tree as Node).left.has("humn"))
+                return solve("humn", tree.left, tree.right).eval()
+            return solve("humn", tree.right, tree.left).eval()
         }
-        val (results, operations) = getMonkeys(input)
-        val root = operations["root"]!!
-        val left = has("humn", root.left, operations)
-
-        var human = 100_000.toBigInteger().times(99_884.toBigInteger()).times(372.toBigInteger()).plus(114_670_000.toBigInteger())
-        val fixed = if (left) find(root.right, results, operations) else find(root.left, results, operations)
-        var changing = if (!left) find(root.right, results, operations) else find(root.left, results, operations)
-
-        while (changing != fixed) {
-            val results = getResults(input)
-            results["humn"] = human
-            changing = find(if (left) root.left else root.right, results, operations)
-            if (human.mod(10000.toBigInteger()) == BigInteger.ZERO) {
-                println("$changing ?= $fixed")
-            }
-            human = human.plus(BigInteger.ONE)
-        }
-
-        return human.minus(BigInteger.ONE)
     }
 
-    private fun getMonkeys(input: List<String>): Pair<MutableMap<String, BigInteger>, MutableMap<String, Operation>> {
-        val results = mutableMapOf<String, BigInteger>()
-        val operations = mutableMapOf<String, Operation>()
-        input.forEach {
-            val (monkey, command) = it.split(": ")
-            if (command.isNumeric()) results[monkey] = command.toInt().toBigInteger()
-            else operations[monkey] = Operation(command)
-        }
-        return results to operations
+    private fun getTree(input: List<String>) = getNode("root", getCommands(input))
+
+    private fun getCommands(input: List<String>): Map<String, String> {
+        return input.map { it.split(": ") }.associate { it.first() to it.last() }
     }
 
-    private fun getResults(input: List<String>): MutableMap<String, BigInteger> {
-        return input.map { it.split(": ") }
-            .filter { it.last().isNumeric() }
-            .associate { it.first() to it.last().toBigInteger() }
-            .toMutableMap()
+    private fun getNode(root: String, commands: Map<String, String>): Tree {
+        val current = commands[root]!!
+        if (current.isNumeric()) return Leaf(root, current.toBigInteger())
+        val (left, op, right) = current.split(" ")
+        return Node(root, getNode(left, commands), getNode(right, commands), op)
     }
 
-
-    private fun find(
-        name: String,
-        results: MutableMap<String, BigInteger>,
-        operations: MutableMap<String, Operation>
-    ): BigInteger {
-        if (name in results) return results[name]!!
-        val operation = operations[name]!!
-        operation.operation(find(operation.left, results, operations), find(operation.right, results, operations))
-            .also { results[name] = it }
-            .also { return it }
-    }
-
-    private fun has(target: String, current: String, operations: MutableMap<String, Operation>): Boolean {
-        if (current == target) return true
-        if (current !in operations) return false
-        return has(target, operations[current]!!.left, operations) ||
-                has(target, operations[current]!!.right, operations)
+    private fun solve(by: String, has: Tree, hasNot: Tree): Tree {
+        if (has !is Node) return hasNot
+        if (has.left.has(by))
+            return solve(by, has.left, Node(has.right.name, hasNot, has.right, inverseOperation[has.operation]!!))
+        if (has.operation == "-" || has.operation == "/")
+            return solve(by, has.right, Node(has.left.name, has.left, hasNot, has.operation))
+        return solve(by, has.right, Node(has.left.name, hasNot, has.left, inverseOperation[has.operation]!!))
     }
 
 }
