@@ -7,26 +7,26 @@ import java.math.BigInteger
 abstract class Tree(val name: String) {
     abstract fun eval(): BigInteger
 
-    abstract fun has(name: String): Boolean
+    abstract fun contains(name: String): Boolean
 }
 
 class Node(name: String, val left: Tree, val right: Tree, val operation: String) : Tree(name) {
 
     override fun eval(): BigInteger = when (operation) {
-        "+" -> left.eval().add(right.eval())
-        "-" -> left.eval().subtract(right.eval())
-        "*" -> left.eval().multiply(right.eval())
-        else -> left.eval().divide(right.eval())
+        "+" -> left.eval().plus(right.eval())
+        "-" -> left.eval().minus(right.eval())
+        "*" -> left.eval().times(right.eval())
+        else -> left.eval().div(right.eval())
     }
 
-    override fun has(name: String) = this.name == name || left.has(name) || right.has(name)
+    override fun contains(name: String) = this.name == name || left.contains(name) || right.contains(name)
 
 }
 
 class Leaf(name: String, private val value: BigInteger) : Tree(name) {
     override fun eval() = value
 
-    override fun has(name: String) = this.name == name
+    override fun contains(name: String) = this.name == name
 }
 
 class Solution : SolutionInterface(testSolutionOne = 152, testSolutionTwo = 301) {
@@ -35,11 +35,10 @@ class Solution : SolutionInterface(testSolutionOne = 152, testSolutionTwo = 301)
     override fun exerciseOne(input: List<String>) = getTree(input).eval()
 
     override fun exerciseTwo(input: List<String>): BigInteger {
-        getTree(input).also { tree ->
-            if ((tree as Node).left.has("humn"))
-                return solve("humn", tree.left, tree.right).eval()
-            return solve("humn", tree.right, tree.left).eval()
-        }
+        val tree = getTree(input)
+        if ((tree as Node).left.contains("humn"))
+            return solve("humn", tree.left, tree.right)
+        return solve("humn", tree.right, tree.left)
     }
 
     private fun getTree(input: List<String>) = getNode("root", getCommands(input))
@@ -55,9 +54,9 @@ class Solution : SolutionInterface(testSolutionOne = 152, testSolutionTwo = 301)
         return Node(root, getNode(left, commands), getNode(right, commands), op)
     }
 
-    private fun solve(by: String, has: Tree, hasNot: Tree): Tree {
-        if (has !is Node) return hasNot
-        if (has.left.has(by))
+    private fun solve(by: String, has: Tree, hasNot: Tree): BigInteger {
+        if (has !is Node) return hasNot.eval()
+        if (has.left.contains(by))
             return solve(by, has.left, Node(has.right.name, hasNot, has.right, inverseOperation[has.operation]!!))
         if (has.operation == "-" || has.operation == "/")
             return solve(by, has.right, Node(has.left.name, has.left, hasNot, has.operation))
