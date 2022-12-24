@@ -15,3 +15,5 @@ infix fun Int.toward(to: Int): IntProgression {
     val step = if (this > to) -1 else 1
     return IntProgression.fromClosedRange(this, to, step)
 }
+
+infix fun Pair<Int, Int>.add(other: Pair<Int, Int>) = this.first + other.first to this.second + other.second
